@@ -1,0 +1,117 @@
+---
+export interface CostColumn {
+  key: string;
+  label: string;
+  align?: "left" | "right" | "center";
+  highlight?: boolean;
+  tone?: "expensive" | "cheap" | "neutral";
+}
+
+export type CostCellValue =
+  | string
+  | number
+  | {
+      value: string | number;
+      tone?: "expensive" | "cheap" | "neutral";
+    };
+
+interface Props {
+  caption?: string;
+  columns: CostColumn[];
+  rows: Array<Record<string, CostCellValue>>;
+  highlightCol?: number;
+}
+
+const { caption, columns, rows, highlightCol } = Astro.props;
+
+function getToneClass(tone?: "expensive" | "cheap" | "neutral") {
+  if (tone === "expensive") return "text-expensive font-semibold";
+  if (tone === "cheap") return "text-emerald font-semibold";
+  return "";
+}
+
+function getAlignClass(align?: "left" | "right" | "center") {
+  if (align === "right") return "text-right";
+  if (align === "center") return "text-center";
+  return "text-left";
+}
+---
+
+<div class="not-prose my-7">
+  <div
+    class="border-border bg-background relative max-h-[32rem] overflow-x-auto overflow-y-auto rounded-lg border"
+    tabindex="0"
+    role="region"
+    aria-label={caption ?? "Cost comparison table"}
+  >
+    <table class="w-full min-w-[600px] border-collapse text-sm">
+      {
+        caption && (
+          <caption class="border-border bg-muted/40 text-muted-foreground border-b px-4 py-2.5 text-left font-mono text-xs">
+            {caption}
+          </caption>
+        )
+      }
+      <thead class="bg-muted sticky top-0 z-10 shadow-[0_1px_0_0_var(--border)]">
+        <tr>
+          {
+            columns.map((col, idx) => {
+              const isHighlighted = col.highlight || highlightCol === idx;
+              return (
+                <th
+                  scope="col"
+                  class:list={[
+                    "px-4 py-3 font-semibold whitespace-nowrap",
+                    getAlignClass(col.align),
+                    isHighlighted
+                      ? "bg-accent/15 text-accent border-accent/40 border-b-2"
+                      : "text-foreground border-border border-b",
+                  ]}
+                >
+                  <div class="inline-flex items-center gap-1.5">
+                    <span>{col.label}</span>
+                    {isHighlighted && (
+                      <span class="bg-accent text-accent-foreground rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide uppercase">
+                        Best
+                      </span>
+                    )}
+                  </div>
+                </th>
+              );
+            })
+          }
+        </tr>
+      </thead>
+      <tbody class="divide-border divide-y">
+        {
+          rows.map(row => (
+            <tr class="hover:bg-muted/30 transition-colors">
+              {columns.map((col, idx) => {
+                const rawCell = row[col.key];
+                const isObject =
+                  typeof rawCell === "object" && rawCell !== null;
+                const displayValue = isObject ? rawCell.value : rawCell;
+                const tone = isObject ? rawCell.tone : col.tone;
+                const isHighlighted = col.highlight || highlightCol === idx;
+
+                return (
+                  <td
+                    class:list={[
+                      "px-4 py-3 whitespace-nowrap",
+                      idx === 0 ? "text-foreground font-medium" : "font-mono",
+                      getAlignClass(col.align),
+                      getToneClass(tone),
+                      isHighlighted && "bg-accent/5",
+                    ]}
+                  >
+                    {displayValue ?? "—"}
+                  </td>
+                );
+              })}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

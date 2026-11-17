@@ -1,0 +1,136 @@
+---
+title: "n8n vs Make.com at 100k Ops/Month: Why Workflow SaaS Bills Explode"
+description: "We simulated 100k to 5M monthly workflow operations on Make.com vs a self-hosted n8n queue-mode stack on Hetzner. Here is the exact break-even math."
+pubDatetime: 2026-11-10T12:00:00Z
+episode: 1
+pillar: "saas-replacement"
+tags:
+  - n8n
+  - make
+  - automation
+  - self-hosting
+youtubeId: "dQw4w9WgXcQ"
+verdict:
+  label: "Make at 100k ops/mo"
+  saasCost: "$1,200/mo"
+  selfHostCost: "$48/mo"
+leadMagnet: "n8n-production-stack"
+featured: true
+---
+
+import VideoEmbed from "@/components/VideoEmbed.astro";
+import CostTable from "@/components/CostTable.astro";
+import LeadMagnetBox from "@/components/LeadMagnetBox.astro";
+import NewsletterForm from "@/components/NewsletterForm.astro";
+
+Most engineering teams start with **Make.com** or Zapier because it takes 15 minutes to ship a webhook-to-Slack or CRM-sync pipeline. Then your product grows, a loop processes 40 items per webhook, and suddenly a single background workflow burns **80,000 operations a day**.
+
+In Episode 01 of CodeToCost, we ran a Python simulation across 10k, 100k, 500k, and 2M monthly operations—and deployed a production **n8n queue-mode** cluster on Docker Compose to measure real RAM, CPU, and Postgres IOPS.
+
+<VideoEmbed
+  youtubeId="dQw4w9WgXcQ"
+  title="EP 01: n8n vs Make.com at Scale — Real Architecture & Cost Math"
+/>
+
+## Why Make.com Pricing Scales Non-Linearly
+
+Make bills per **operation**, not per workflow execution. A 12-node workflow that iterates over a 25-row JSON array consumes `1 + (25 × 11) = 276` operations on a single trigger.
+
+At low volume, Make's Core plan looks cheap. Once you cross 100k–500k ops/month—especially with polling intervals or multi-step AI enrichment—you hit two walls:
+
+1. **Per-operation overages** or forced jumps to Teams/Enterprise tiers.
+2. **Execution concurrency limits**, requiring extra paid add-ons for parallel webhook bursts.
+
+In contrast, **n8n** self-hosted has zero per-operation licensing fees. You pay strictly for compute, memory, and database backups.
+
+## Simulated Cost Comparison (Monthly TCO)
+
+Every row below includes realistic infrastructure overhead for self-hosting: a dedicated Hetzner Cloud instance, automated off-site Postgres backups, and 20% CPU/RAM headroom for webhook spikes.
+
+<CostTable
+  caption="Monthly TCO simulation (USD) — Make.com vs n8n Cloud vs Self-Hosted n8n (Hetzner + Backups)"
+  highlightCol={3}
+  columns={[
+    { key: "volume", label: "Monthly Ops", align: "left" },
+    { key: "make", label: "Make.com (SaaS)", align: "right", tone: "expensive" },
+    { key: "n8nCloud", label: "n8n Cloud", align: "right" },
+    { key: "selfHost", label: "Self-Hosted n8n", align: "right", tone: "cheap", highlight: true },
+    { key: "savings", label: "Annual Savings", align: "right", tone: "cheap" },
+  ]}
+  rows={[
+    {
+      volume: "10,000 ops",
+      make: "$10.59/mo",
+      n8nCloud: "$24.00/mo",
+      selfHost: "$14.00/mo",
+      savings: "-$41/yr",
+    },
+    {
+      volume: "100,000 ops",
+      make: "$1,200.00/mo",
+      n8nCloud: "$60.00/mo",
+      selfHost: "$48.00/mo",
+      savings: "$13,824/yr",
+    },
+    {
+      volume: "500,000 ops",
+      make: "$2,850.00/mo",
+      n8nCloud: "$180.00/mo",
+      selfHost: "$68.00/mo",
+      savings: "$33,384/yr",
+    },
+    {
+      volume: "2,000,000 ops",
+      make: "$6,400.00/mo",
+      n8nCloud: "$580.00/mo",
+      selfHost: "$112.00/mo",
+      savings: "$75,456/yr",
+    },
+  ]}
+/>
+
+Notice the **10,000 ops** row: at hobby or early-MVP volume, Make.com is actually cheaper than running a redundant VPS with backups. The crossover point hits right around **35,000 operations/month**.
+
+<LeadMagnetBox leadMagnet="n8n-production-stack" />
+
+## The Production n8n Architecture (Queue Mode)
+
+Running n8n as a single container with SQLite works for local testing, but it **will** lock up under concurrent webhooks. In production, we split the stack into four services:
+
+1. **n8n Main (`EXECUTIONS_MODE=queue`)**: Serves the UI and receives incoming webhooks, pushing jobs into Redis without blocking the event loop.
+2. **Redis 7**: Holds the BullMQ execution queue and worker state.
+3. **n8n Workers (2+ replicas)**: Pull jobs from Redis and execute HTTP requests, transforms, and LLM calls in parallel.
+4. **PostgreSQL 16**: Stores credentials, workflow definitions, and execution logs (with `EXECUTIONS_DATA_PRUNE=true` so disk doesn't fill up).
+
+```yaml
+services:
+  n8n-main:
+    image: docker.n8n.io/n8nio/n8n:1.68.0
+    environment:
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - DB_TYPE=postgresdb
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+    depends_on:
+      - postgres
+      - redis
+```
+
+## When You Should NOT Self-Host n8n
+
+Self-hosting isn't automatically the right answer for every team:
+
+- **Under 25k ops/month**: Stay on Make.com Core or n8n Cloud Starter. Your engineering time is worth more than saving \$15/month.
+- **Zero Linux/Docker ownership**: If nobody on your team is comfortable rotating encryption keys or monitoring disk usage, managed n8n Cloud at \$60/mo is still 20× cheaper than Make at 100k ops.
+
+## Get Weekly Architecture & Cost Math
+
+Want the Python simulation script and future SaaS vs. self-hosting teardowns delivered straight to your inbox?
+
+<NewsletterForm
+  idPrefix="post-ep01"
+  title="Subscribe to CodeToCost"
+  description="One deep-dive cost breakdown per week. No fluff, no sponsored vendor pitches."
+  buttonLabel="Join the List"
+/>

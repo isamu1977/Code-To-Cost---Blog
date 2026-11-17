@@ -1,0 +1,198 @@
+---
+import {
+  PUBLIC_LISTMONK_URL,
+  PUBLIC_LISTMONK_LIST_UUID,
+} from "astro:env/client";
+
+interface Props {
+  compact?: boolean;
+  title?: string;
+  description?: string;
+  buttonLabel?: string;
+  successMessage?: string;
+  idPrefix?: string;
+}
+
+const {
+  compact = false,
+  title,
+  description,
+  buttonLabel = "Subscribe",
+  successMessage = "You're in. Check your inbox to confirm and unlock all production blueprints.",
+  idPrefix = "newsletter",
+} = Astro.props;
+
+const listmonkUrl = PUBLIC_LISTMONK_URL ?? "";
+const listUuid = PUBLIC_LISTMONK_LIST_UUID ?? "";
+const inputId = `${idPrefix}-email-${Math.random().toString(36).slice(2, 7)}`;
+---
+
+<div
+  class:list={[
+    "newsletter-form-wrapper not-prose",
+    compact
+      ? "mt-5"
+      : "border-border bg-muted/30 rounded-lg border p-5 sm:p-6",
+  ]}
+>
+  {
+    title && !compact && (
+      <h3 class="text-foreground text-lg font-semibold">{title}</h3>
+    )
+  }
+  {
+    description && !compact && (
+      <p class="text-muted-foreground mt-1 text-sm">{description}</p>
+    )
+  }
+
+  <form
+    class:list={[
+      "ctc-newsletter-form flex flex-col gap-2.5 sm:flex-row sm:items-center",
+      { "mt-4": Boolean(title || description) && !compact },
+    ]}
+    data-listmonk-url={listmonkUrl}
+    data-list-uuid={listUuid}
+    data-success-message={successMessage}
+    novalidate
+  >
+    <label for={inputId} class="sr-only">Email address</label>
+    <input
+      id={inputId}
+      name="email"
+      type="email"
+      required
+      autocomplete="email"
+      placeholder="you@company.com"
+      class="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-accent w-full rounded-md border px-3.5 py-2 text-sm sm:max-w-xs"
+    />
+    <button
+      type="submit"
+      class="bg-accent text-accent-foreground hover:bg-accent/90 inline-flex shrink-0 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      {buttonLabel}
+    </button>
+  </form>
+
+  <p
+    class="ctc-newsletter-status mt-2 hidden text-xs font-medium"
+    role="status"
+    aria-live="polite"
+  >
+  </p>
+
+  {
+    compact && (
+      <p class="text-muted-foreground mt-1.5 text-xs">
+        Weekly cost breakdowns + free Docker blueprints. Zero spam, unsubscribe
+        anytime.
+      </p>
+    )
+  }
+</div>
+
+<script>
+  function initNewsletterForms() {
+    document
+      .querySelectorAll<HTMLFormElement>(".ctc-newsletter-form")
+      .forEach(form => {
+        if (form.dataset.initialized === "true") return;
+        form.dataset.initialized = "true";
+
+        const wrapper = form.closest(".newsletter-form-wrapper");
+        const statusEl = wrapper?.querySelector<HTMLElement>(
+          ".ctc-newsletter-status"
+        );
+        const submitBtn = form.querySelector<HTMLButtonElement>(
+          'button[type="submit"]'
+        );
+        const emailInput =
+          form.querySelector<HTMLInputElement>('input[name="email"]');
+
+        const setStatus = (message: string, isError: boolean) => {
+          if (!statusEl) return;
+          statusEl.textContent = message;
+          statusEl.classList.remove(
+            "hidden",
+            "text-emerald",
+            "text-expensive"
+          );
+          statusEl.classList.add(isError ? "text-expensive" : "text-emerald");
+        };
+
+        form.addEventListener("submit", async event => {
+          event.preventDefault();
+          if (!emailInput || !submitBtn) return;
+
+          const email = emailInput.value.trim();
+          if (!email || !emailInput.checkValidity()) {
+            setStatus("Please enter a valid email address.", true);
+            emailInput.focus();
+            return;
+          }
+
+          const url = form.dataset.listmonkUrl ?? "";
+          const listUuid = form.dataset.listUuid ?? "";
+          const successMsg =
+            form.dataset.successMessage ?? "Subscribed successfully.";
+
+          if (!url || !listUuid) {
+            setStatus(
+              "Newsletter endpoint is not configured yet (set PUBLIC_LISTMONK_URL and PUBLIC_LISTMONK_LIST_UUID).",
+              true
+            );
+            return;
+          }
+
+          const originalLabel = submitBtn.textContent ?? "Subscribe";
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Subscribing...";
+
+          try {
+            const isApiEndpoint = url.includes("/api/public/subscription");
+            let response: Response;
+
+            if (isApiEndpoint) {
+              response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email,
+                  list_uuids: [listUuid],
+                }),
+              });
+            } else {
+              const body = new URLSearchParams();
+              body.set("email", email);
+              body.set("l", listUuid);
+              response = await fetch(url, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: body.toString(),
+              });
+            }
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            form.reset();
+            setStatus(successMsg, false);
+          } catch {
+            setStatus(
+              "Could not complete subscription right now. Please try again in a moment.",
+              true
+            );
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalLabel;
+          }
+        });
+      });
+  }
+
+  initNewsletterForms();
+  document.addEventListener("astro:after-swap", initNewsletterForms);
+</script>

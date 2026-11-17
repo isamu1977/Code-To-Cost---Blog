@@ -1,0 +1,235 @@
+---
+import { getCollection } from "astro:content";
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { PUBLIC_YOUTUBE_CHANNEL_URL } from "astro:env/client";
+import IconArrowRight from "@/assets/icons/IconArrowRight.svg";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Footer from "@/components/Footer.astro";
+import Card from "@/components/Card.astro";
+import LinkButton from "@/components/LinkButton.astro";
+import NewsletterForm from "@/components/NewsletterForm.astro";
+import { PILLARS } from "@/data/pillars";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+import config from "@/config";
+
+const { posts: postsConfig } = config;
+
+const locale = Astro.currentLocale ?? config.site.lang;
+const youtubeUrl =
+  PUBLIC_YOUTUBE_CHANNEL_URL ?? "https://www.youtube.com/@CodeToCost";
+
+const posts = await getCollection("posts");
+const sortedPosts = getSortedPosts(posts);
+const latestPosts = sortedPosts.slice(0, postsConfig.perIndex || 6);
+const homePath = getRelativeLocaleUrl(locale, "");
+---
+
+<Layout>
+  <Header />
+  <main
+    id="main-content"
+    data-layout="index"
+    data-home-path={homePath}
+    class="app-layout my-1"
+  >
+    <!-- 1. Hero -->
+    <section id="hero" class="border-border border-b pt-10 pb-8">
+      <div class="mb-4 flex items-center gap-2.5">
+        <span
+          class="border-accent/50 bg-accent/15 text-accent inline-flex size-8 items-center justify-center rounded-md border font-mono text-sm font-bold"
+          aria-hidden="true"
+        >
+          $
+        </span>
+        <span
+          class="text-accent font-mono text-xs font-semibold tracking-wider uppercase"
+        >
+          CodeToCost
+        </span>
+      </div>
+
+      <h1
+        class="text-foreground max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl"
+      >
+        Clear Architecture, Real Math, Zero Fluff.
+      </h1>
+
+      <p class="text-muted-foreground mt-3 max-w-2xl text-base leading-relaxed">
+        Real cost breakdowns of SaaS vs self-hosting — every number simulated,
+        nothing guessed.
+      </p>
+
+      <div class="mt-6 flex flex-wrap items-center gap-3">
+        <a
+          href={getRelativeLocaleUrl(locale, "posts")}
+          class="bg-accent text-accent-foreground hover:bg-accent/90 inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold transition-colors"
+        >
+          Browse the analyses
+          <IconArrowRight class="size-4" />
+        </a>
+        <a
+          href={youtubeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="border-border bg-muted/40 text-foreground hover:border-accent hover:text-accent inline-flex items-center gap-2 rounded-md border px-4 py-2.5 text-sm font-semibold transition-colors"
+        >
+          Watch on YouTube
+        </a>
+      </div>
+
+      <NewsletterForm
+        compact
+        idPrefix="hero-newsletter"
+        buttonLabel="Get Weekly Math"
+      />
+    </section>
+
+    <!-- 2. Latest analyses -->
+    <section id="latest-analyses" class="border-border border-b py-10">
+      <div class="mb-6 flex items-baseline justify-between gap-4">
+        <h2 class="text-2xl font-semibold tracking-tight">Latest analyses</h2>
+        <LinkButton
+          href={getRelativeLocaleUrl(locale, "posts")}
+          class="text-accent text-sm font-medium hover:underline"
+        >
+          All analyses →
+        </LinkButton>
+      </div>
+
+      {
+        latestPosts.length > 0 ? (
+          <ul class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {latestPosts.map(data => (
+              <Card variant="h3" {...data} />
+            ))}
+          </ul>
+        ) : (
+          <p class="text-muted-foreground text-sm">
+            No analyses published yet.
+          </p>
+        )
+      }
+    </section>
+
+    <!-- 3. Start with a pillar -->
+    <section id="pillars" class="border-border border-b py-10">
+      <div class="mb-6">
+        <h2 class="text-2xl font-semibold tracking-tight">
+          Start with a pillar
+        </h2>
+        <p class="text-muted-foreground mt-1 text-sm">
+          Four editorial tracks covering architecture, unit economics, and
+          vendor reality.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {
+          PILLARS.map(pillar => (
+            <a
+              href={`/pillars/${pillar.slug}`}
+              class="group border-border bg-muted/20 hover:border-accent/60 flex flex-col justify-between rounded-lg border p-5 transition-colors"
+            >
+              <div>
+                <span class="text-accent font-mono text-xs font-medium">
+                  /{pillar.slug}
+                </span>
+                <h3 class="text-foreground group-hover:text-accent mt-1.5 text-lg font-semibold transition-colors">
+                  {pillar.name}
+                </h3>
+                <p class="text-muted-foreground mt-1.5 text-sm">
+                  {pillar.description}
+                </p>
+              </div>
+              <span class="text-accent mt-4 inline-flex items-center gap-1 text-xs font-semibold">
+                Explore pillar
+                <span aria-hidden="true">→</span>
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+
+    <!-- 4. Free production blueprints -->
+    <section id="blueprints" class="border-border border-b py-10">
+      <div
+        class="border-accent/30 bg-muted/25 rounded-lg border p-6 sm:p-8"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span
+            class="bg-emerald/15 text-emerald rounded px-2.5 py-0.5 font-mono text-xs font-semibold uppercase"
+          >
+            Free Production Blueprints
+          </span>
+          <a
+            href="/blueprints"
+            class="text-accent text-xs font-semibold hover:underline"
+          >
+            Browse all blueprints →
+          </a>
+        </div>
+
+        <h2 class="text-foreground mt-3 text-2xl font-semibold tracking-tight">
+          Docker Compose stacks &amp; cost calculators from every episode
+        </h2>
+        <p class="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+          Every CodeToCost video ships with a production-ready{" "}
+          <code class="font-mono text-xs">docker-compose.yml</code>, hardened{" "}
+          <code class="font-mono text-xs">.env.example</code>, and the Python/CSV
+          simulation sheet. Subscribe once to unlock the entire blueprint
+          library.
+        </p>
+
+        <div class="mt-5">
+          <NewsletterForm
+            compact
+            idPrefix="blueprints-newsletter"
+            buttonLabel="Unlock Blueprints"
+            successMessage="Subscribed! Check your email for your blueprint library access link."
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Channel strip -->
+    <section id="youtube-channel" class="py-10">
+      <div
+        class="border-border bg-muted/20 flex flex-col items-start justify-between gap-4 rounded-lg border p-6 sm:flex-row sm:items-center"
+      >
+        <div>
+          <span class="text-accent font-mono text-xs font-semibold uppercase">
+            YouTube · @CodeToCost
+          </span>
+          <h2 class="text-foreground mt-1 text-xl font-semibold">
+            Prefer the video walkthrough?
+          </h2>
+          <p class="text-muted-foreground mt-1 text-sm">
+            Watch the benchmarks, live architecture diagrams, and container
+            deployments on YouTube.
+          </p>
+        </div>
+        <a
+          href={youtubeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="border-accent/50 bg-accent/10 text-accent hover:bg-accent hover:text-accent-foreground shrink-0 rounded-md border px-4 py-2.5 text-sm font-semibold transition-colors"
+        >
+          Watch on YouTube →
+        </a>
+      </div>
+    </section>
+  </main>
+  <Footer />
+</Layout>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const indexLayout = (document.querySelector("#main-content") as HTMLElement)
+      ?.dataset?.layout;
+    if (indexLayout) {
+      sessionStorage.setItem("backUrl", "/");
+    }
+  });
+</script>

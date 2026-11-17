@@ -1,0 +1,90 @@
+---
+import type { GetStaticPaths } from "astro";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Breadcrumb from "@/components/Breadcrumb.astro";
+import Main from "@/components/Main.astro";
+import Footer from "@/components/Footer.astro";
+import NewsletterForm from "@/components/NewsletterForm.astro";
+import { BLUEPRINTS, type BlueprintMeta } from "@/data/blueprints";
+import config from "@/config";
+
+export const getStaticPaths = (() => {
+  return BLUEPRINTS.map(bp => ({
+    params: { slug: bp.slug },
+    props: { blueprint: bp },
+  }));
+}) satisfies GetStaticPaths;
+
+const { blueprint } = Astro.props as { blueprint: BlueprintMeta };
+---
+
+<Layout
+  title={`${blueprint.title} | ${config.site.title}`}
+  description={blueprint.summary}
+>
+  <Header />
+  <Breadcrumb />
+  <Main pageTitle={blueprint.title} pageDesc={blueprint.summary}>
+    <div class="space-y-8">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="bg-accent/15 text-accent rounded px-2.5 py-1 font-mono text-xs font-semibold">
+          Episode {String(blueprint.episode).padStart(2, "0")}
+        </span>
+        <span class="bg-emerald/15 text-emerald rounded px-2.5 py-1 font-mono text-xs font-semibold">
+          {blueprint.estimatedSavings}
+        </span>
+        {
+          blueprint.stack.map(tech => (
+            <span class="border-border bg-muted/40 text-muted-foreground rounded border px-2 py-1 font-mono text-xs">
+              {tech}
+            </span>
+          ))
+        }
+      </div>
+
+      <section class="border-border bg-muted/20 rounded-lg border p-5 sm:p-6">
+        <h2 class="text-foreground text-lg font-semibold">
+          What&apos;s inside this blueprint
+        </h2>
+        <ul class="text-muted-foreground mt-4 space-y-3 text-sm">
+          {
+            blueprint.bullets.map(bullet => (
+              <li class="flex items-start gap-2.5">
+                <span
+                  class="text-emerald mt-0.5 shrink-0 font-mono font-bold"
+                  aria-hidden="true"
+                >
+                  ✓
+                </span>
+                <span>{bullet}</span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="border-border mt-5 border-t pt-4">
+          <a
+            href={`/posts/${blueprint.postSlug}`}
+            class="text-accent text-sm font-medium hover:underline"
+          >
+            ← Read the full Episode {String(blueprint.episode).padStart(2, "0")} cost analysis
+          </a>
+        </div>
+      </section>
+
+      <section aria-labelledby="download-gate-heading">
+        <h2 id="download-gate-heading" class="sr-only">
+          Download Blueprint
+        </h2>
+        <NewsletterForm
+          idPrefix={`blueprint-${blueprint.slug}`}
+          title="Enter your email to download the blueprint bundle"
+          description="We'll send you the direct download link for the docker-compose.yml, .env.example, and CSV cost calculator — plus future episode blueprints."
+          buttonLabel="Send Me the Blueprint"
+          successMessage={`Confirmed! Check your inbox for the ${blueprint.title} download link.`}
+        />
+      </section>
+    </div>
+  </Main>
+  <Footer />
+</Layout>

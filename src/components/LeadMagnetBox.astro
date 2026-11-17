@@ -1,0 +1,71 @@
+---
+import { BLUEPRINT_MAP } from "@/data/blueprints";
+
+interface Props {
+  leadMagnet: string;
+}
+
+const { leadMagnet } = Astro.props;
+const blueprint = BLUEPRINT_MAP[leadMagnet];
+
+const title = blueprint?.title ?? "Free Production Blueprint & Cost Calculator";
+const bullets = blueprint?.bullets ?? [
+  "Production docker-compose.yml ready for Coolify or VPS deployment",
+  "Hardened .env.example with resource limits and retention defaults",
+  "Break-even CSV cost calculator comparing SaaS vs self-hosted tiers",
+];
+const href = `/blueprints/${leadMagnet}`;
+---
+
+<aside
+  class="not-prose border-accent/40 bg-muted/40 my-8 rounded-lg border p-5 sm:p-6"
+  aria-label="Free Production Blueprint"
+>
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <span
+      class="bg-accent/15 text-accent inline-flex items-center rounded px-2 py-0.5 font-mono text-xs font-semibold tracking-wide uppercase"
+    >
+      Free Production Blueprint
+    </span>
+    {
+      blueprint?.estimatedSavings && (
+        <span class="text-emerald font-mono text-xs font-semibold">
+          {blueprint.estimatedSavings}
+        </span>
+      )
+    }
+  </div>
+
+  <h3 class="text-foreground mt-3 text-lg font-semibold sm:text-xl">
+    {title}
+  </h3>
+
+  <ul class="text-muted-foreground mt-3 space-y-2 text-sm">
+    {
+      bullets.map(bullet => (
+        <li class="flex items-start gap-2.5">
+          <span
+            class="text-emerald mt-0.5 shrink-0 font-mono font-bold"
+            aria-hidden="true"
+          >
+            ✓
+          </span>
+          <span>{bullet}</span>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="mt-5 flex flex-wrap items-center gap-3">
+    <a
+      href={href}
+      class="bg-accent text-accent-foreground hover:bg-accent/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold no-underline transition-colors"
+    >
+      Get the Free Blueprint
+      <span aria-hidden="true">→</span>
+    </a>
+    <span class="text-muted-foreground text-xs">
+      Includes Docker Compose, .env.example &amp; CSV model
+    </span>
+  </div>
+</aside>

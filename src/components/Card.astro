@@ -1,0 +1,66 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getPostUrl } from "@/utils/getPostPaths";
+import { toTransitionName } from "@/utils/toTransitionName";
+import { PILLAR_MAP } from "@/data/pillars";
+import Datetime from "./Datetime.astro";
+
+type Props = {
+  variant?: "h2" | "h3";
+} & CollectionEntry<"posts">;
+
+const { variant: Heading = "h2", id, data, filePath } = Astro.props;
+
+const { title, description, episode, pillar, verdict, ...props } = data;
+const pillarMeta = PILLAR_MAP[pillar];
+const postUrl = getPostUrl(id, filePath, Astro.currentLocale);
+---
+
+<li
+  class="border-border bg-muted/20 hover:border-accent/60 flex h-full flex-col justify-between rounded-lg border p-5 transition-colors"
+>
+  <div>
+    <div class="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <a
+          href={`/pillars/${pillar}`}
+          class="bg-accent/10 text-accent hover:bg-accent/20 inline-flex items-center rounded px-2 py-0.5 font-mono text-[11px] font-medium transition-colors"
+        >
+          {pillarMeta?.shortName ?? pillar}
+        </a>
+        <span class="text-muted-foreground font-mono text-xs">
+          EP {String(episode).padStart(2, "0")}
+        </span>
+      </div>
+      <Datetime {...props} size="sm" />
+    </div>
+
+    <a
+      href={postUrl}
+      class:list={[
+        "text-foreground hover:text-accent inline-block text-lg leading-snug font-semibold",
+        "decoration-dashed underline-offset-4 hover:underline",
+        "focus-visible:no-underline focus-visible:underline-offset-0",
+      ]}
+    >
+      <Heading transition:name={toTransitionName(id)}>
+        {title}
+      </Heading>
+    </a>
+
+    <p class="text-muted-foreground mt-2 line-clamp-2 text-sm leading-relaxed">
+      {description}
+    </p>
+  </div>
+
+  <div
+    class="border-border bg-background/60 mt-4 flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-2 text-xs"
+  >
+    <span class="text-muted-foreground font-medium">{verdict.label}</span>
+    <div class="flex items-center gap-2 font-mono">
+      <span class="text-expensive font-semibold">{verdict.saasCost}</span>
+      <span class="text-muted-foreground" aria-hidden="true">vs</span>
+      <span class="text-emerald font-semibold">{verdict.selfHostCost}</span>
+    </div>
+  </div>
+</li>

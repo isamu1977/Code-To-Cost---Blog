@@ -1,0 +1,87 @@
+---
+interface Props {
+  youtubeId: string;
+  title?: string;
+}
+
+const { youtubeId, title = "Watch episode on YouTube" } = Astro.props;
+const thumbnailUrl = `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`;
+---
+
+<div
+  class="video-facade border-border bg-muted/40 relative my-6 aspect-video w-full overflow-hidden rounded-lg border"
+  data-youtube-id={youtubeId}
+  data-video-title={title}
+>
+  <button
+    type="button"
+    class="group relative block size-full cursor-pointer border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+    aria-label={`Play video: ${title}`}
+  >
+    <img
+      src={thumbnailUrl}
+      alt={title}
+      loading="lazy"
+      decoding="async"
+      class="size-full object-cover transition-opacity duration-200 group-hover:opacity-90"
+    />
+    <span
+      class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"
+      aria-hidden="true"
+    ></span>
+    <span
+      class="pointer-events-none absolute inset-0 flex items-center justify-center"
+      aria-hidden="true"
+    >
+      <span
+        class="bg-background/90 border-accent/60 group-hover:bg-accent group-hover:text-accent-foreground flex size-16 items-center justify-center rounded-full border-2 shadow-lg transition-colors"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          class="ms-0.5 size-7"
+        >
+          <path d="M8 5.14v14l11-7-11-7z"></path>
+        </svg>
+      </span>
+    </span>
+    <span
+      class="pointer-events-none absolute right-3 bottom-3 left-3 flex items-center justify-between gap-2 text-xs font-medium text-white/90"
+    >
+      <span class="truncate">{title}</span>
+      <span class="bg-background/80 text-foreground shrink-0 rounded px-2 py-0.5 font-mono text-[11px]">
+        Click to load YouTube
+      </span>
+    </span>
+  </button>
+</div>
+
+<script>
+  function initVideoEmbeds() {
+    document.querySelectorAll<HTMLElement>(".video-facade").forEach(wrapper => {
+      if (wrapper.dataset.initialized === "true") return;
+      wrapper.dataset.initialized = "true";
+
+      const btn = wrapper.querySelector("button");
+      const youtubeId = wrapper.dataset.youtubeId;
+      const title = wrapper.dataset.videoTitle ?? "YouTube video player";
+
+      if (!btn || !youtubeId) return;
+
+      btn.addEventListener("click", () => {
+        const iframe = document.createElement("iframe");
+        iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}?autoplay=1&rel=0`;
+        iframe.title = title;
+        iframe.allow =
+          "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+        iframe.allowFullscreen = true;
+        iframe.className = "size-full border-0";
+        wrapper.replaceChildren(iframe);
+      });
+    });
+  }
+
+  initVideoEmbeds();
+  document.addEventListener("astro:after-swap", initVideoEmbeds);
+</script>

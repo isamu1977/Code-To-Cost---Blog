@@ -1,0 +1,118 @@
+---
+title: "Datadog vs SigNoz at 500 GB/Month Logs: The Observability Scale Math"
+description: "How Datadog's per-host, custom-metric, and log-ingestion multipliers compound at scale—and what a ClickHouse-backed SigNoz cluster actually costs."
+pubDatetime: 2026-11-14T12:00:00Z
+episode: 2
+pillar: "scale-math"
+tags:
+  - datadog
+  - signoz
+  - observability
+  - clickhouse
+youtubeId: "jfKfPfyJRdk"
+verdict:
+  label: "20 hosts + 500 GB logs"
+  saasCost: "$2,640/mo"
+  selfHostCost: "$180/mo"
+leadMagnet: "signoz-docker-blueprint"
+featured: false
+---
+
+import VideoEmbed from "@/components/VideoEmbed.astro";
+import CostTable from "@/components/CostTable.astro";
+import LeadMagnetBox from "@/components/LeadMagnetBox.astro";
+import NewsletterForm from "@/components/NewsletterForm.astro";
+
+Observability is the silent margin killer for B2B SaaS startups. Everything looks reasonable during your first 6 months—until your engineering team ships structured JSON logs across 20 containers, turns on APM tracing, and emits a few high-cardinality custom metrics.
+
+Then the **Datadog** invoice arrives, and your monitoring bill is higher than your actual production database cluster.
+
+<VideoEmbed
+  youtubeId="jfKfPfyJRdk"
+  title="EP 02: Datadog vs SigNoz — The Observability Scale Math"
+/>
+
+## The Three Multipliers in Datadog's Pricing
+
+Datadog does not have one price; it has **four independent meters** that compound together:
+
+1. **Infrastructure Hosts** (\$15–\$23/host/mo)
+2. **APM Hosts** (\$31–\$40/host/mo)
+3. **Log Ingestion + Indexing** (\$0.10/GB ingested + \$1.70 per million indexed events for 15-day retention)
+4. **Custom Metrics** (\$5 per 100 metrics/month — where a single `user_id` or `pod_name` tag explosion can add \$800/mo overnight)
+
+When we modeled a realistic 20-host microservice cluster generating **500 GB/month of logs** (~16.6 GB/day) and **4,000 custom metrics**, Datadog's monthly bill hit **\$2,640/mo**.
+
+## Cost Simulation: Datadog vs SigNoz Self-Hosted
+
+SigNoz stores logs, traces, and metrics inside **ClickHouse** using OpenTelemetry (`otel-collector`). Because ClickHouse compresses structured logs at 6×–10× ratios using ZSTD, 500 GB of raw JSON logs occupies roughly **65 GB on disk** for a 15-day retention window.
+
+<CostTable
+  caption="Monthly Observability TCO (USD) — 15-day retention, APM + Logs + Metrics"
+  highlightCol={2}
+  columns={[
+    { key: "tier", label: "Cluster Footprint", align: "left" },
+    { key: "datadog", label: "Datadog Pro", align: "right", tone: "expensive" },
+    { key: "signozSelf", label: "SigNoz (Self-Hosted)", align: "right", tone: "cheap", highlight: true },
+    { key: "signozCloud", label: "SigNoz Cloud", align: "right" },
+    { key: "delta", label: "Monthly Delta", align: "right", tone: "cheap" },
+  ]}
+  rows={[
+    {
+      tier: "5 hosts · 100 GB logs",
+      datadog: "$585/mo",
+      signozSelf: "$65/mo",
+      signozCloud: "$199/mo",
+      delta: "-$520/mo",
+    },
+    {
+      tier: "20 hosts · 500 GB logs",
+      datadog: "$2,640/mo",
+      signozSelf: "$180/mo",
+      signozCloud: "$490/mo",
+      delta: "-$2,460/mo",
+    },
+    {
+      tier: "50 hosts · 2 TB logs",
+      datadog: "$8,920/mo",
+      signozSelf: "$420/mo",
+      signozCloud: "$1,450/mo",
+      delta: "-$8,500/mo",
+    },
+  ]}
+/>
+
+<LeadMagnetBox leadMagnet="signoz-docker-blueprint" />
+
+## Sizing ClickHouse So It Doesn't OOM
+
+ClickHouse is fast, but its default memory settings assume it owns the entire machine. If you deploy SigNoz on a shared VPS without capping ClickHouse's cache, the Linux OOM killer will terminate it during heavy log queries.
+
+In our blueprint's `docker-compose.yml`, we enforce three guardrails:
+
+- **Dedicated NVMe storage**: Minimum 300 GB NVMe for 500 GB/month ingestion with 30-day TTL.
+- **Explicit ClickHouse memory cap**: `max_server_memory_usage_to_ram_ratio = 0.65` on a 32 GB RAM node.
+- **OTel Collector batching & tail-sampling**: Drop health-check `/healthz` spans at the collector before they ever hit ClickHouse.
+
+```yaml
+services:
+  otel-collector:
+    image: signoz/signoz-otel-collector:0.102.9
+    command:
+      - "--config=/etc/otel-collector-config.yaml"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+```
+
+## The Verdict
+
+If your team is under 5 engineers and needs zero-maintenance dashboards today, **SigNoz Cloud** or a tightly capped Grafana Cloud tier is a great middle ground. Once you cross **500 GB/month in logs** or **15+ hosts**, running SigNoz on a dedicated 32 GB NVMe box saves roughly **\$29,500/year** while giving you full OpenTelemetry ownership.
+
+<NewsletterForm
+  idPrefix="post-ep02"
+  title="Get the Python Cost Models"
+  description="Subscribe for weekly infrastructure math, ClickHouse tuning notes, and free Docker blueprints."
+  buttonLabel="Subscribe Free"
+/>

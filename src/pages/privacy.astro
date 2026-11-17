@@ -1,0 +1,52 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Breadcrumb from "@/components/Breadcrumb.astro";
+import Main from "@/components/Main.astro";
+import Footer from "@/components/Footer.astro";
+import config from "@/config";
+---
+
+<Layout
+  title={`Privacy Policy | ${config.site.title}`}
+  description="How CodeToCost handles newsletter subscriptions, analytics, and embedded media."
+>
+  <Header />
+  <Breadcrumb />
+  <Main
+    pageTitle="Privacy Policy"
+    pageDesc="Minimal data collection, zero ad trackers."
+    class="app-prose"
+  >
+    <p>
+      CodeToCost is built as a static website with minimal client-side
+      JavaScript. We respect your privacy and avoid invasive third-party ad
+      networks or cross-site tracking scripts.
+    </p>
+
+    <h2>Newsletter &amp; Blueprint Downloads</h2>
+    <p>
+      When you subscribe to receive weekly cost analyses or unlock production
+      blueprints, your email address is sent directly to our self-hosted{" "}
+      <strong>Listmonk</strong> instance. We only use your email to deliver the
+      requested blueprints and CodeToCost articles. Every email includes a
+      one-click unsubscribe link.
+    </p>
+
+    <h2>Embedded YouTube Videos</h2>
+    <p>
+      Article pages use a lightweight facade for YouTube embeds. No connection to
+      YouTube is opened and no YouTube cookies are set unless you explicitly
+      click to play the video, which loads{" "}
+      <code>youtube-nocookie.com</code>.
+    </p>
+
+    <h2>Local Storage</h2>
+    <p>
+      We store your theme preference (<code>dark</code> or <code>light</code>)
+      in your browser&apos;s <code>localStorage</code> so the site remembers your
+      choice across visits.
+    </p>
+  </Main>
+  <Footer />
+</Layout>

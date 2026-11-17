@@ -1,0 +1,52 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Breadcrumb from "@/components/Breadcrumb.astro";
+import Main from "@/components/Main.astro";
+import Footer from "@/components/Footer.astro";
+import config from "@/config";
+---
+
+<Layout
+  title={`Affiliate Disclosure | ${config.site.title}`}
+  description="Transparency about affiliate links and how CodeToCost funds its infrastructure benchmarks."
+>
+  <Header />
+  <Breadcrumb />
+  <Main
+    pageTitle="Affiliate Disclosure"
+    pageDesc="How CodeToCost stays independent and transparent."
+    class="app-prose"
+  >
+    <p>
+      CodeToCost occasionally includes affiliate or referral links to cloud
+      infrastructure providers, VPS hosts (such as Hetzner or DigitalOcean), and
+      developer tools mentioned in our episodes and written analyses.
+    </p>
+
+    <h2>What This Means for You</h2>
+    <ul>
+      <li>
+        <strong>Zero extra cost:</strong> Using an affiliate link never increases
+        what you pay — in many cases it includes referral credits for your account.
+      </li>
+      <li>
+        <strong>Math comes first:</strong> Affiliate relationships never influence
+        our Python cost simulations, architectural recommendations, or verdict
+        tables. If a managed SaaS is cheaper or safer than self-hosting for your
+        scale, we say so directly.
+      </li>
+      <li>
+        <strong>No paid placements:</strong> We do not accept payment to alter
+        benchmarks or omit vendor pricing caveats.
+      </li>
+    </ul>
+
+    <p>
+      If you have questions about any link or benchmark on{" "}
+      <code>codetocost.com</code>, please reach out via our social channels in
+      the footer.
+    </p>
+  </Main>
+  <Footer />
+</Layout>
