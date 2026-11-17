@@ -1,5 +1,7 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
+import { Image } from "astro:assets";
+import logoIcon from "@/assets/images/codetocost-icon.png";
 import IconUnderline from "@/assets/icons/IconUnderline.svg";
 import IconMenuDeep from "@/assets/icons/IconMenuDeep.svg";
 import IconArchive from "@/assets/icons/IconArchive.svg";
@@ -50,14 +52,15 @@ const isActive = (path: string) => {
   >
     <a
       href={getRelativeLocaleUrl(locale, "")}
-      class="absolute flex items-center gap-2 py-1 text-xl leading-8 font-bold tracking-tight whitespace-nowrap sm:static sm:my-auto sm:text-2xl sm:leading-none"
+      class="absolute flex items-center gap-2.5 py-1 text-xl leading-8 font-bold tracking-tight whitespace-nowrap sm:static sm:my-auto sm:text-2xl sm:leading-none"
     >
-      <span
-        class="border-accent/50 bg-accent/15 text-accent inline-flex size-7 items-center justify-center rounded border font-mono text-xs font-bold"
-        aria-hidden="true"
-      >
-        $
-      </span>
+      <Image
+        src={logoIcon}
+        alt="CodeToCost logo"
+        width={34}
+        height={30}
+        class="h-7 w-auto shrink-0 sm:h-8"
+      />
       <span>{site.title}</span>
     </a>
     <nav
